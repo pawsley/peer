@@ -116,7 +116,7 @@ class Api extends RestController
     public function register_post()
     {
         $data = [
-            'id_user' => $this->post('id_user'),
+            // 'id_user' => $this->post('id_user'),
             'finger_id' => $this->post('finger_id'),
         ];
 
