@@ -7,7 +7,7 @@ class Api_model extends CI_Model {
   }
   public function regist($data) {
     $insert = $this->db->insert('tb_finger', [
-      'id_user' => $data['id_user'],
+      // 'id_user' => $data['id_user'],
       'finger_id' => $data['finger_id'],
     ]);
     return $insert;
