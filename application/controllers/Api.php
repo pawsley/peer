@@ -120,7 +120,7 @@ class Api extends RestController
             'finger_id' => $this->post('finger_id'),
         ];
 
-        if (empty($data['id_user']) || empty($data['finger_id'])) {
+        if (empty($data['finger_id'])) {
             return $this->response([
                 'status' => false,
                 'message' => 'id_user and finger_id are required'
