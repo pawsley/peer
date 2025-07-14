@@ -80,7 +80,7 @@ class Api extends RestController
         $currentTime = date('H:i:s');
         $message = '';
 
-        if ($data['status_absen'] === 'in') {
+        if ($data['status_absen'] === 'IN') {
             if ($currentTime <= $settokoin) {
                 $message = 'absen tepat waktu';
             } else {
@@ -88,7 +88,7 @@ class Api extends RestController
                 $lateMinutes = (strtotime($currentTime) - strtotime($settokoin)) / 60;
                 $message = 'absen terlambat ' . round($lateMinutes) . ' menit';
             }
-        } elseif ($data['status_absen'] === 'out') {
+        } elseif ($data['status_absen'] === 'OUT') {
             if ($currentTime >= $settokout) {
                 $message = 'pulang tepat waktu';
             } else {
