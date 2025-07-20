@@ -106,7 +106,7 @@ class Api extends RestController
             $this->response([
                 'status' => true,
                 'message' => $message,
-                'nama' => $data['status_absen'] === 'IN' ? $nama->nama_lengkap.' berhasil absen masuk ' : $nama->nama_lengkap.' berhasil absen pulang',
+                'nama' => $data['status_absen'] === 'IN' ? $nama->nama_lengkap.' berhasil absen masuk 🥶' : $nama->nama_lengkap.' berhasil absen pulang 🤪',
             ], RestController::HTTP_CREATED);
         } else {
             $this->response([
