@@ -104,7 +104,8 @@ class Api extends RestController
         if ($insert) {
             $this->response([
                 'status' => true,
-                'message' => $message
+                'message' => $message,
+                'nama' => $data['finger_id'].' berhasil absen masuk ',
             ], RestController::HTTP_CREATED);
         } else {
             $this->response([
@@ -115,27 +116,66 @@ class Api extends RestController
     }
     public function register_post()
     {
-        $data = [
-            // 'id_user' => $this->post('id_user'),
-            'finger_id' => $this->post('finger_id'),
-        ];
+        // Get headers and extract token
+        $headers = $this->input->request_headers();
+        $token = isset($headers['Authorization']) ? str_replace('Bearer ', '', $headers['Authorization']) : null;
 
-        if (empty($data['finger_id'])) {
+        if (!$token) {
             return $this->response([
                 'status' => false,
-                'message' => 'id_user and finger_id are required'
+                'message' => 'Authorization token is missing'
+            ], RestController::HTTP_UNAUTHORIZED);
+        }
+
+        // Get user/token data
+        $user = $this->api->maxregist($token)->row();
+
+        if (!$user) {
+            return $this->response([
+                'status' => false,
+                'message' => 'Invalid token'
+            ], RestController::HTTP_UNAUTHORIZED);
+        }
+
+        // Registration limit from token
+        $max_limit = $user->max_limit;
+
+        // Count all existing registrations
+        $current_count = $this->api->count_finger_id();
+
+        if ($current_count >= $max_limit) {
+            return $this->response([
+                'status' => false,
+                'message' => 'Maximum registrations reached'
             ], RestController::HTTP_BAD_REQUEST);
         }
 
+        // Get finger_id from POST data
+        $finger_id = $this->post('finger_id');
+
+        if (empty($finger_id)) {
+            return $this->response([
+                'status' => false,
+                'message' => 'finger_id is required'
+            ], RestController::HTTP_BAD_REQUEST);
+        }
+
+        // Prepare data for insertion
+        $data = [
+            'finger_id' => $finger_id,
+            'regist_at' => date('Y-m-d H:i:s'),
+        ];
+
+        // Save to database
         $insert = $this->api->regist($data);
 
         if ($insert) {
-            $this->response([
+            return $this->response([
                 'status' => true,
                 'message' => 'Data berhasil disimpan'
             ], RestController::HTTP_CREATED);
         } else {
-            $this->response([
+            return $this->response([
                 'status' => false,
                 'message' => 'Data gagal disimpan'
             ], RestController::HTTP_BAD_REQUEST);

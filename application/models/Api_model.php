@@ -5,9 +5,14 @@ class Api_model extends CI_Model {
   public function is_valid_token($token) {
     return $this->db->get_where('tb_token', ['token' => $token])->row();
   }
+  public function maxregist($token) {
+    return $this->db->get_where('tb_token', ['token' => $token]);
+  }
+  public function count_finger_id() {
+      return $this->db->from('tb_finger')->count_all_results();
+  }
   public function regist($data) {
     $insert = $this->db->insert('tb_finger', [
-      // 'id_user' => $data['id_user'],
       'finger_id' => $data['finger_id'],
     ]);
     return $insert;
