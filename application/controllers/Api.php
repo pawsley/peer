@@ -100,12 +100,13 @@ class Api extends RestController
         }
 
         $insert = $this->api->absen($data);
+        $nama = $this->db->get_where('vfingerdata', ['finger_id' => $data['finger_id']])->row();
 
         if ($insert) {
             $this->response([
                 'status' => true,
                 'message' => $message,
-                'nama' => $data['finger_id'].' berhasil absen masuk ',
+                'nama' => $nama->nama_lengkap.' berhasil absen masuk ',
             ], RestController::HTTP_CREATED);
         } else {
             $this->response([
