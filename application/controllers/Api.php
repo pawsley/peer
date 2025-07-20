@@ -182,8 +182,8 @@ class Api extends RestController
             ], RestController::HTTP_BAD_REQUEST);
         }
     }
-    public function delete_post(){
-        
+    public function delete_post()
+    {
         $finger_id = $this->post('finger_id');
 
         if (empty($finger_id)) {
@@ -193,13 +193,24 @@ class Api extends RestController
             ], RestController::HTTP_BAD_REQUEST);
         }
 
+        // Retrieve the corresponding user record
+        $nama = $this->db->get_where('vfingerdata', ['finger_id' => $finger_id])->row();
+
+        // Check if data exists
+        if (!$nama) {
+            return $this->response([
+                'status' => false,
+                'message' => 'Data not found for the provided finger_id'
+            ], RestController::HTTP_NOT_FOUND);
+        }
+
         $delete = $this->api->delete_finger($finger_id);
 
         if ($delete) {
             return $this->response([
                 'status' => true,
                 'message' => 'Data berhasil dihapus',
-                'name' => $finger_id.' berhasil dihapus'
+                'name' => $nama->nama_lengkap . ' berhasil dihapus'
             ], RestController::HTTP_OK);
         } else {
             return $this->response([
