@@ -33,6 +33,10 @@ class Api_model extends CI_Model {
     ]);
     return $insert;
   }
+  public function delete_finger($finger_id) {
+    $this->db->where('finger_id', $finger_id);
+    return $this->db->delete('tb_finger');
+  }
 }
 
 /* End of file Api_model.php */

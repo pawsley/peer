@@ -181,4 +181,30 @@ class Api extends RestController
             ], RestController::HTTP_BAD_REQUEST);
         }
     }
+    public function delete_post(){
+        
+        $finger_id = $this->post('finger_id');
+
+        if (empty($finger_id)) {
+            return $this->response([
+                'status' => false,
+                'message' => 'finger_id is required'
+            ], RestController::HTTP_BAD_REQUEST);
+        }
+
+        $delete = $this->api->delete_finger($finger_id);
+
+        if ($delete) {
+            return $this->response([
+                'status' => true,
+                'message' => 'Data berhasil dihapus',
+                'name' => $finger_id.' berhasil dihapus'
+            ], RestController::HTTP_OK);
+        } else {
+            return $this->response([
+                'status' => false,
+                'message' => 'Data gagal dihapus'
+            ], RestController::HTTP_BAD_REQUEST);
+        }
+    }
 }
