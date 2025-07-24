@@ -61,9 +61,6 @@ class Api extends RestController
     }
     public function absen_post()
     {
-        $settokoin = '09:00:00';
-        $settokout = '17:00:00';
-
         $data = [
             'finger_id'    => $this->post('finger_id'),
             'status_absen' => $this->post('status_absen'),
@@ -76,45 +73,109 @@ class Api extends RestController
                 'message' => 'finger_id and status_absen are required'
             ], RestController::HTTP_BAD_REQUEST);
         }
-
+        $datafinger = $this->db->get_where('vfingerdata', ['finger_id' => $data['finger_id']])->row();
         $currentTime = date('H:i:s');
+		$setin = $datafinger->shift_in;
+        $setout = $datafinger->shift_out;
         $message = '';
+		$datamessage = '';
 
         if ($data['status_absen'] === 'IN') {
-            if ($currentTime <= $settokoin) {
-                $message = 'absen tepat waktu';
-            } else {
-                // Calculate late minutes
-                $lateMinutes = (strtotime($currentTime) - strtotime($settokoin)) / 60;
-                $message = 'absen terlambat ' . round($lateMinutes) . ' menit';
-            }
-        } elseif ($data['status_absen'] === 'OUT') {
-            if ($currentTime >= $settokout) {
-                $message = 'pulang tepat waktu';
-            } else {
-                $earlyMinutes = (strtotime($settokout) - strtotime($currentTime)) / 60;
-                $message = 'pulang lebih awal ' . round($earlyMinutes) . ' menit';
-            }
-        } else {
-            $message = 'status_absen tidak dikenal';
+			if ($currentTime <= $setin) {
+				$message = 'absen tepat waktu';
+			} else {
+				$lateMinutes = (int)((strtotime($currentTime) - strtotime($setin)) / 60);
+				$hours = floor($lateMinutes / 60);
+				$minutes = $lateMinutes % 60;
+		
+				$message = 'absen terlambat ';
+				if ($hours > 0) {
+					$message .= $hours . ' jam';
+				}
+				if ($minutes > 0) {
+					if ($hours > 0) {
+						$message .= ' ';
+					}
+					$message .= $minutes . ' menit';
+				}
+			}
+			$datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\nAbsen Masuk : {$currentTime}";
+		} elseif ($data['status_absen'] === 'OUT') {
+			if ($currentTime >= $setout) {
+				$message = 'pulang tepat waktu';
+			} else {
+				$earlyMinutes = (int)((strtotime($setout) - strtotime($currentTime)) / 60);
+				$hours = floor($earlyMinutes / 60);
+				$minutes = $earlyMinutes % 60;
+		
+				$message = 'pulang lebih awal ';
+				if ($hours > 0) {
+					$message .= $hours . ' jam';
+				}
+				if ($minutes > 0) {
+					if ($hours > 0) {
+						$message .= ' ';
+					}
+					$message .= $minutes . ' menit';
+				}
+			}
+			$datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\nAbsen Pulang : {$currentTime}";
+		} else {
+			return $this->response([
+                'status' => false,
+                'message' => 'status absen is wrong'
+            ], RestController::HTTP_BAD_REQUEST);
         }
 
         $insert = $this->api->absen($data);
-        $nama = $this->db->get_where('vfingerdata', ['finger_id' => $data['finger_id']])->row();
 
         if ($insert) {
-            $this->response([
-                'status' => true,
-                'message' => $message,
-                'nama' => $data['status_absen'] === 'IN' ? $nama->nama_lengkap.' berhasil absen masuk ' : $nama->nama_lengkap.' berhasil absen pulang ',
-            ], RestController::HTTP_CREATED);
+			$this->response([
+				'status' => true,
+				'message' => $message,
+				'nama' => $datamessage,
+			], RestController::HTTP_CREATED);
+			
         } else {
             $this->response([
                 'status' => false,
-                'message' => 'Gagal absen'
+                'message' => 'Gagal absensi'
             ], RestController::HTTP_BAD_REQUEST);
         }
     }
+	public function rest_post()
+	{
+		$data = [
+            'finger_id'    => $this->post('finger_id'),
+            'status_rest' => $this->post('status_rest'),
+            'rest_at'     => date('Y-m-d H:i:s'),
+        ];
+
+		if (empty($data['finger_id']) || empty($data['status_rest'])) {
+			return $this->response([
+				'status' => false,
+				'message' => 'finger_id and status_rest are required'
+			], RestController::HTTP_BAD_REQUEST);
+		}
+		$datafinger = $this->db->get_where('vfingerdata', ['finger_id' => $data['finger_id']])->row();
+		$datamessage = '';
+		$message = '';
+		$insert = $this->api->rest($data);
+
+        if ($insert) {
+			$this->response([
+				'status' => true,
+				'message' => $message,
+				'nama' => $datamessage,
+			], RestController::HTTP_CREATED);
+			
+        } else {
+            $this->response([
+                'status' => false,
+                'message' => 'Gagal istirahat'
+            ], RestController::HTTP_BAD_REQUEST);
+        }
+	}
     public function register_post()
     {
         // Get headers and extract token
