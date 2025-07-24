@@ -160,6 +160,19 @@ class Api extends RestController
 		$datafinger = $this->db->get_where('vfingerdata', ['finger_id' => $data['finger_id']])->row();
 		$datamessage = '';
 		$message = '';
+
+        if ($data['status_rest'] === 'IN') {
+            $message = 'istirahat dimulai';
+            $datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\nIstirahat Mulai : " . date('H:i:s');
+        } elseif ($data['status_rest'] === 'OUT') {
+            $message = 'istirahat selesai';
+            $datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\nIstirahat Selesai : " . date('H:i:s');
+        } else {
+            return $this->response([
+                'status' => false,
+                'message' => 'status istirahat is wrong'
+            ], RestController::HTTP_BAD_REQUEST);
+        }
 		$insert = $this->api->rest($data);
 
         if ($insert) {
@@ -214,6 +227,13 @@ class Api extends RestController
 
         // Get finger_id from POST data
         $finger_id = $this->post('finger_id');
+        $status = $this->post('status_regist');
+        if ($status !== "regist") {
+            return $this->response([
+                'status' => false,
+                'message' => 'Invalid status_regist'
+            ], RestController::HTTP_BAD_REQUEST);
+        }
 
         if (empty($finger_id)) {
             return $this->response([
