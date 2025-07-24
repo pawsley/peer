@@ -254,7 +254,8 @@ class Api extends RestController
         if ($insert) {
             return $this->response([
                 'status' => true,
-                'message' => 'Data berhasil disimpan'
+                'message' => 'Data berhasil disimpan',
+                'nama' => $finger_id . ' berhasil didaftarkan'
             ], RestController::HTTP_CREATED);
         } else {
             return $this->response([
@@ -295,7 +296,7 @@ class Api extends RestController
             return $this->response([
                 'status' => true,
                 'message' => 'Data berhasil dihapus',
-                'name' => $nama->nama_lengkap . ' berhasil dihapus '
+                'name' => 'finger id '.$finger_id.'\n'.$nama->nama_lengkap . ' berhasil dihapus '
             ], RestController::HTTP_OK);
         } else {
             return $this->response([
