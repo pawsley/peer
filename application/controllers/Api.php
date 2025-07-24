@@ -246,6 +246,7 @@ class Api extends RestController
     public function delete_post()
     {
         $finger_id = $this->post('finger_id');
+        $status = $this->post('status_delete');
 
         if (empty($finger_id)) {
             return $this->response([
@@ -253,11 +254,14 @@ class Api extends RestController
                 'message' => 'finger_id is required'
             ], RestController::HTTP_BAD_REQUEST);
         }
-
-        // Retrieve the corresponding user record
+        if ($status !== "delete") {
+            return $this->response([
+                'status' => false,
+                'message' => 'Invalid status_delete'
+            ], RestController::HTTP_BAD_REQUEST);
+        }
         $nama = $this->db->get_where('vfingerdata', ['finger_id' => $finger_id])->row();
 
-        // Check if data exists
         if (!$nama) {
             return $this->response([
                 'status' => false,
