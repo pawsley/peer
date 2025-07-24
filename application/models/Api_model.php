@@ -26,7 +26,7 @@ class Api_model extends CI_Model {
     return $insert;
   }
   public function rest($data) {
-    $insert = $this->db->insert('tb_finger_absen', [
+    $insert = $this->db->insert('tb_finger_rest', [
       'finger_id' => $data['finger_id'],
       'status_rest' => $data['status_rest'],
       'rest_at' => $data['rest_at'],
