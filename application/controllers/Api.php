@@ -296,7 +296,7 @@ class Api extends RestController
             return $this->response([
                 'status' => true,
                 'message' => 'Data berhasil dihapus',
-                'name' => 'finger id '.$finger_id.'\n'.$nama->nama_lengkap . ' berhasil dihapus '
+                'nama' => 'finger id '.$finger_id.'\n'.$nama->nama_lengkap . ' berhasil dihapus '
             ], RestController::HTTP_OK);
         } else {
             return $this->response([
