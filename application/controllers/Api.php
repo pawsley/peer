@@ -163,10 +163,10 @@ class Api extends RestController
 
         if ($data['status_rest'] === 'IN') {
             $message = 'istirahat selesai';
-            $datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\nIstirahat Selesai : " . date('H:i:s');
+            $datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\n" . date('H:i');
         } elseif ($data['status_rest'] === 'OUT') {
             $message = 'istirahat dimulai';
-            $datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\nIstirahat Mulai : " . date('H:i:s');
+            $datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\n" . date('H:i');
         } else {
             return $this->response([
                 'status' => false,
