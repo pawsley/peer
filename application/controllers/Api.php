@@ -67,72 +67,51 @@ class Api extends RestController
             'absen_at'     => date('Y-m-d H:i:s'),
         ];
 
-        if (empty($data['finger_id']) || empty($data['status_absen'])) {
+        if (empty($data['finger_id']) || empty($data['status_absen'])  || !in_array($data['status_absen'], ['IN', 'OUT'], true)) {
             return $this->response([
                 'status' => false,
                 'message' => 'finger_id and status_absen are required'
             ], RestController::HTTP_BAD_REQUEST);
         }
-        $datafinger = $this->db->get_where('vfingerdata', ['finger_id' => $data['finger_id']])->row();
-        $currentTime = date('H:i:s');
-		$setin = $datafinger->shift_in;
-        $setout = $datafinger->shift_out;
-        $message = '';
-		$datamessage = '';
+        // Get last status for this finger on this date
+        $finger_info = $this->api->get_finger_with_last_absen(
+            $data['finger_id'],
+            date('Y-m-d', strtotime($data['absen_at']))
+        );
 
-        if ($data['status_absen'] === 'IN') {
-			if ($currentTime <= $setin) {
-				$message = 'absen tepat waktu';
-			} else {
-				$lateMinutes = (int)((strtotime($currentTime) - strtotime($setin)) / 60);
-				$hours = floor($lateMinutes / 60);
-				$minutes = $lateMinutes % 60;
-		
-				$message = 'absen terlambat ';
-				if ($hours > 0) {
-					$message .= $hours . ' jam';
-				}
-				if ($minutes > 0) {
-					if ($hours > 0) {
-						$message .= ' ';
-					}
-					$message .= $minutes . ' menit';
-				}
-			}
-			$datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\nAbsen Masuk : {$currentTime}";
-		} elseif ($data['status_absen'] === 'OUT') {
-			if ($currentTime >= $setout) {
-				$message = 'pulang tepat waktu';
-			} else {
-				$earlyMinutes = (int)((strtotime($setout) - strtotime($currentTime)) / 60);
-				$hours = floor($earlyMinutes / 60);
-				$minutes = $earlyMinutes % 60;
-		
-				$message = 'pulang lebih awal ';
-				if ($hours > 0) {
-					$message .= $hours . ' jam';
-				}
-				if ($minutes > 0) {
-					if ($hours > 0) {
-						$message .= ' ';
-					}
-					$message .= $minutes . ' menit';
-				}
-			}
-			$datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\nAbsen Pulang : {$currentTime}";
-		} else {
-			return $this->response([
+        // If no record yet for today
+        if (empty($finger_info->last_status)) {
+            if ($data['status_absen'] !== 'IN') {
+                return $this->response([
+                    'status' => false,
+                    'message' => 'Gagal',
+                    'nama'    => "Wajib absen masuk\nterlebih dahulu"
+                ], RestController::HTTP_BAD_REQUEST);
+            }
+        }
+        // If there is a last status, prevent duplicates
+        elseif ($finger_info->last_status === $data['status_absen']) {
+            $msg = $finger_info->last_status === 'IN' 
+                ? "Sudah melakukan\nAbsen Masuk" 
+                : "Sudah melakukan\nAbsen Pulang";
+
+            return $this->response([
                 'status' => false,
-                'message' => 'status absen is wrong'
+                'message' => 'Gagal',
+                'nama' => $msg
             ], RestController::HTTP_BAD_REQUEST);
         }
 
         $insert = $this->api->absen($data);
 
         if ($insert) {
+            $datamessage = ($data['status_absen'] === 'IN')
+                ? "{$finger_info->nama_lengkap}\n{$finger_info->shift}\nAbsen Masuk : " . date('H:i', strtotime($data['absen_at']))
+                : "{$finger_info->nama_lengkap}\n{$finger_info->shift}\nAbsen Pulang : " . date('H:i', strtotime($data['absen_at']));
+            $msg = $data['status_absen'] === 'IN' ? 'absen masuk' : 'absen pulang';
 			$this->response([
 				'status' => true,
-				'message' => $message,
+				'message' => $msg,
 				'nama' => $datamessage,
 			], RestController::HTTP_CREATED);
 			
@@ -143,52 +122,70 @@ class Api extends RestController
             ], RestController::HTTP_BAD_REQUEST);
         }
     }
-	public function rest_post()
-	{
-		$data = [
+    public function rest_post()
+    {
+        $data = [
             'finger_id'    => $this->post('finger_id'),
-            'status_rest' => $this->post('status_rest'),
-            'rest_at'     => date('Y-m-d H:i:s'),
+            'status_rest'  => $this->post('status_rest'),
+            'rest_at'      => date('Y-m-d H:i:s'),
         ];
 
-		if (empty($data['finger_id']) || empty($data['status_rest'])) {
-			return $this->response([
-				'status' => false,
-				'message' => 'finger_id and status_rest are required'
-			], RestController::HTTP_BAD_REQUEST);
-		}
-		$datafinger = $this->db->get_where('vfingerdata', ['finger_id' => $data['finger_id']])->row();
-		$datamessage = '';
-		$message = '';
-
-        if ($data['status_rest'] === 'IN') {
-            $message = 'istirahat selesai';
-            $datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\n" . date('H:i');
-        } elseif ($data['status_rest'] === 'OUT') {
-            $message = 'istirahat dimulai';
-            $datamessage = "{$datafinger->nama_lengkap}\n{$datafinger->shift}\n" . date('H:i');
-        } else {
+        if (empty($data['finger_id']) || empty($data['status_rest']) || !in_array($data['status_rest'], ['IN', 'OUT'], true)) {
             return $this->response([
                 'status' => false,
-                'message' => 'status istirahat is wrong'
+                'message' => 'finger_id and status_rest are required',
+                'nama' => 'Request salah'
             ], RestController::HTTP_BAD_REQUEST);
         }
-		$insert = $this->api->rest($data);
+
+        // Get last status for this finger on this date
+        $finger_info = $this->api->get_finger_with_last_rest(
+            $data['finger_id'],
+            date('Y-m-d', strtotime($data['rest_at']))
+        );
+
+        // If no record yet for today
+        if (empty($finger_info->last_status)) {
+            if ($data['status_rest'] !== 'OUT') {
+                return $this->response([
+                    'status' => false,
+                    'message' => 'Gagal',
+                    'nama'    => "Istirahat dimulai\nterlebih dahulu"
+                ], RestController::HTTP_BAD_REQUEST);
+            }
+        }
+        // If there is a last status, prevent duplicates
+        elseif ($finger_info->last_status === $data['status_rest']) {
+            $msg = $finger_info->last_status === 'IN' 
+                ? "Sudah melakukan\nIstirahat Selesai" 
+                : "Sudah melakukan\nIstirahat Dimulai";
+
+            return $this->response([
+                'status' => false,
+                'message' => 'Gagal',
+                'nama' => $msg
+            ], RestController::HTTP_BAD_REQUEST);
+        }
+
+        // Continue your insert logic
+        $insert = $this->api->rest($data);
 
         if ($insert) {
-			$this->response([
-				'status' => true,
-				'message' => $message,
-				'nama' => $datamessage,
-			], RestController::HTTP_CREATED);
-			
+            $datamessage = "{$finger_info->nama_lengkap}\n{$finger_info->shift}\n" . date('H:i', strtotime($data['rest_at']));
+            $msg = $data['status_rest'] === 'IN' ? 'istirahat selesai' : 'istirahat dimulai';
+
+            $this->response([
+                'status' => true,
+                'message' => $msg,
+                'nama' => $datamessage,
+            ], RestController::HTTP_CREATED);
         } else {
             $this->response([
                 'status' => false,
                 'message' => 'Gagal istirahat'
             ], RestController::HTTP_BAD_REQUEST);
         }
-	}
+    }
     public function register_post()
     {
         // Get headers and extract token

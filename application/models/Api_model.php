@@ -37,6 +37,48 @@ class Api_model extends CI_Model {
     $this->db->where('finger_id', $finger_id);
     return $this->db->delete('tb_finger');
   }
+  public function get_finger_with_last_rest($finger_id, $date)
+  {
+    $date_start = date('Y-m-d 00:00:00', strtotime($date));
+    $date_end   = date('Y-m-d 23:59:59', strtotime($date));
+
+    $this->db->select('f.nama_lengkap, f.shift, f.shift_in, r.status_rest AS last_status');
+    $this->db->from('vfingerdata f');
+    $this->db->join(
+        '(SELECT finger_id, status_rest
+            FROM tb_finger_rest
+          WHERE rest_at >= "'.$date_start.'" 
+            AND rest_at <= "'.$date_end.'"
+          ORDER BY id DESC
+          LIMIT 1) r',
+        'r.finger_id = f.finger_id',
+        'left'
+    );
+    $this->db->where('f.finger_id', $finger_id);
+    
+    return $this->db->get()->row();
+  }
+  public function get_finger_with_last_absen($finger_id, $date)
+  {
+    $date_start = date('Y-m-d 00:00:00', strtotime($date));
+    $date_end   = date('Y-m-d 23:59:59', strtotime($date));
+
+    $this->db->select('f.nama_lengkap, f.shift, f.shift_in, r.status_absen AS last_status');
+    $this->db->from('vfingerdata f');
+    $this->db->join(
+        '(SELECT finger_id, status_absen
+            FROM tb_finger_absen
+          WHERE absen_at >= "'.$date_start.'" 
+            AND absen_at <= "'.$date_end.'"
+          ORDER BY id DESC
+          LIMIT 1) r',
+        'r.finger_id = f.finger_id',
+        'left'
+    );
+    $this->db->where('f.finger_id', $finger_id);
+    
+    return $this->db->get()->row();
+  }
 }
 
 /* End of file Api_model.php */
