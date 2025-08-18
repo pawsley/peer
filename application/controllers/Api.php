@@ -249,10 +249,11 @@ class Api extends RestController
         $insert = $this->api->regist($data);
 
         if ($insert) {
+            $datamessage = "ID Finger {$finger_id}\nberhasil didaftarkan";
             return $this->response([
                 'status' => true,
                 'message' => 'Data berhasil disimpan',
-                'nama' => $finger_id . ' berhasil didaftarkan'
+                'nama' => $datamessage
             ], RestController::HTTP_CREATED);
         } else {
             return $this->response([
