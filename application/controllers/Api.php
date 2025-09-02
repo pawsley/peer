@@ -69,7 +69,7 @@ class Api extends RestController
 
         if (empty($data['finger_id']) || empty($data['status_absen'])  || !in_array($data['status_absen'], ['IN', 'OUT'], true)) {
             return $this->response([
-                'status' => false,
+                'status' => true,
                 'message' => 'finger_id and status_absen are required'
             ], RestController::HTTP_BAD_REQUEST);
         }
@@ -83,7 +83,7 @@ class Api extends RestController
         if (empty($finger_info->last_status)) {
             if ($data['status_absen'] !== 'IN') {
                 return $this->response([
-                    'status' => false,
+                    'status' => true,
                     'message' => 'Gagal',
                     'nama'    => "Wajib absen masuk\nterlebih dahulu"
                 ], RestController::HTTP_BAD_REQUEST);
@@ -96,7 +96,7 @@ class Api extends RestController
                 : "Sudah melakukan\nAbsen Pulang";
 
             return $this->response([
-                'status' => false,
+                'status' => true,
                 'message' => 'Gagal',
                 'nama' => $msg
             ], RestController::HTTP_BAD_REQUEST);
