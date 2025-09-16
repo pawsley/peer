@@ -60,24 +60,28 @@ class Api_model extends CI_Model {
   }
   public function get_finger_with_last_absen($finger_id, $date)
   {
-    $date_start = date('Y-m-d 00:00:00', strtotime($date));
-    $date_end   = date('Y-m-d 23:59:59', strtotime($date));
+      $date_start = date('Y-m-d 00:00:00', strtotime($date));
+      $date_end   = date('Y-m-d 23:59:59', strtotime($date));
 
-    $this->db->select('f.nama_lengkap, f.shift, f.shift_in, r.status_absen AS last_status');
-    $this->db->from('vfingerdata f');
-    $this->db->join(
-        '(SELECT finger_id, status_absen
-            FROM tb_finger_absen
-          WHERE absen_at >= "'.$date_start.'" 
-            AND absen_at <= "'.$date_end.'"
-          ORDER BY id DESC
-          LIMIT 1) r',
-        'r.finger_id = f.finger_id',
-        'left'
-    );
-    $this->db->where('f.finger_id', $finger_id);
-    
-    return $this->db->get()->row();
+      $this->db->select('f.nama_lengkap, f.shift, f.shift_in, r.status_absen AS last_status');
+      $this->db->from('vfingerdata f');
+      $this->db->join(
+          '(SELECT t1.finger_id, t1.status_absen
+            FROM tb_finger_absen t1
+            INNER JOIN (
+                SELECT finger_id, MAX(id) AS max_id
+                FROM tb_finger_absen
+                WHERE absen_at >= "'.$date_start.'"
+                  AND absen_at <= "'.$date_end.'"
+                GROUP BY finger_id
+            ) t2 ON t1.finger_id = t2.finger_id AND t1.id = t2.max_id
+          ) r',
+          'r.finger_id = f.finger_id',
+          'left'
+      );
+      $this->db->where('f.finger_id', $finger_id);
+
+      return $this->db->get()->row();
   }
 }
 
