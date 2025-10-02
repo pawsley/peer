@@ -45,15 +45,19 @@ class Api_model extends CI_Model {
     $this->db->select('f.nama_lengkap, f.shift, f.shift_in, r.status_rest AS last_status');
     $this->db->from('vfingerdata f');
     $this->db->join(
-        '(SELECT finger_id, status_rest
-            FROM tb_finger_rest
-          WHERE rest_at >= "'.$date_start.'" 
-            AND rest_at <= "'.$date_end.'"
-          ORDER BY id DESC
-          LIMIT 1) r',
-        'r.finger_id = f.finger_id',
-        'left'
-    );
+          '(SELECT t1.finger_id, t1.status_rest
+            FROM tb_finger_rest t1
+            INNER JOIN (
+                SELECT finger_id, MAX(id) AS max_id
+                FROM tb_finger_rest
+                WHERE rest_at >= "'.$date_start.'"
+                  AND rest_at <= "'.$date_end.'"
+                GROUP BY finger_id
+            ) t2 ON t1.finger_id = t2.finger_id AND t1.id = t2.max_id
+          ) r',
+          'r.finger_id = f.finger_id',
+          'left'
+      );
     $this->db->where('f.finger_id', $finger_id);
     
     return $this->db->get()->row();
